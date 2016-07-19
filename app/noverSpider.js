@@ -11,7 +11,7 @@ var NovelSpider = function(options){
         startUrl: '',
         parseData: function(data){return data}
     }, options || {});
-    this.novel = '';
+    this.novel = '# '+this.bookName+'\r\n';
     this.successLogger = null;
     this.netErrorLogger = null;
     this.parseErrorLogger = null;
@@ -42,7 +42,7 @@ proto.spide = function(url){
             self.successLogger.trace(url);
             self.novel += novel.text;
         } else {
-            self.parseErrorLogger.error(url);
+            self.parseErrorLogger.error(url, novel.msg);
         }
 
         if(novel.nextUrl && novel.nextUrl!=url){
