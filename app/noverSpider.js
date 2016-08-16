@@ -9,6 +9,7 @@ var NovelSpider = function(options){
         novelName: '',
         bookName: '',
         startUrl: '',
+        endUrl: '',
         parseData: function(data){return data}
     }, options || {});
     this.novel = '# '+this.bookName+'\r\n';
@@ -36,7 +37,7 @@ proto.start = function(){
 proto.spide = function(url){
     var self = this;
     this.getData(url).then(function(data){
-        var novel = self.parseData(data);
+        var novel = self.parseData(data, url);
 
         if(novel.code == 200){
             self.successLogger.trace(url);
@@ -45,7 +46,7 @@ proto.spide = function(url){
             self.parseErrorLogger.error(url, novel.msg);
         }
 
-        if(novel.nextUrl && novel.nextUrl!=url){
+        if(novel.nextUrl && novel.nextUrl!=url && url!=self.endUrl){
             self.spide(novel.nextUrl);
         } else {
             self.writeNovel();
