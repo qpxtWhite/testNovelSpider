@@ -1,25 +1,22 @@
-var NovelSpider = require('./noverSpider2');
+var NovelSpider = require('./noverSpider3');
 var cheerio = require('cheerio');
 
 
 
 var spider = new NovelSpider({
     novelName: '苗疆蛊事2',
-    novelUrl: 'http://www.miaojianggushi.com/miao-jiang-gu-shi-2',
+    novelUrl: 'http://www.miaojianggushi2.com/',
     parseNovelSection: function(data){
         try{
             var $ = cheerio.load(data, {
                 decodeEntities: false
             });
-            var textdom = $('.wrapper .entry-content p');
-            var text = '';
-            textdom.each(function(ix, dom){
-                text+=$(dom).html().replace(/(<br>)+/g, '\r\n')+'\r\n';
+            var textdom = $('.post_entry p');
+            var text = [];
+            textdom.each(function(ix, p){
+                text.push($(p).html().replace(/(^\s*)|(\s*$)/g, ""))
             })
-            var $$ = cheerio.load('<div>'+text+'</div>');
-            $$('script').remove();
-            text = $$('div').text();
-            return text;
+            return text.join('\r\n');
         } catch(e){
 
         }
@@ -30,12 +27,16 @@ var spider = new NovelSpider({
             var $ = cheerio.load(data, {
                 decodeEntities: false
             });
-            var domBook = $('#content .page-content>h2');
-            domBook.each(function(ix, domTitle){
-                var book = {bookName: $(domTitle).text().replace(/^.*?\s/,''), bookSections: []};
-                var domSection = $(domTitle).next().find('li a');
-                domSection.each(function(ix, domLink){
-                    book.bookSections.push({sectionName:$(domLink).text(), sectionUrl: $(domLink).attr('href')})
+            var domBook = $('#content .container');
+            domBook.each(function(ix, dom){
+                var $dom = $(dom);
+                var book = {bookName:$dom.find('.title h2 a').eq(0).text(), bookSections:[]};
+                $dom.children('ul').find('li').each(function(ix, li){
+                    var $link = $(li).find('a[href]');
+                    book.bookSections.push({
+                        sectionName: $link.html(),
+                        sectionUrl: $link.attr('href')
+                    })
                 })
                 novel.push(book);
             })

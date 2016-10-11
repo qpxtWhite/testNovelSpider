@@ -58,7 +58,7 @@ proto.spide = function(url){
 
 proto.writeNovel = function(){
     var self = this;
-    fs.writeFile('../novels/'+this.novelName+'/'+this.bookName+'.txt', this.novel, function(){
+    fs.writeFile('../novels/'+this.novelName+'/'+this.bookName+'.txt', this.novel, function(err){
         console.log(self.novelName+'---'+self.bookName+' success');
     })
 }

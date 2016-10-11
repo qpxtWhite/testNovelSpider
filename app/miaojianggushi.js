@@ -1,40 +1,65 @@
-var NovelSpider = require('./noverSpider');
+var NovelSpider = require('./noverSpider3');
 var cheerio = require('cheerio');
 
 
 
 var spider = new NovelSpider({
-    startUrl: 'http://www.miaojianggushi.com/285.html',
-    endUrl: 'http://www.miaojianggushi.com/304.html',
     novelName: '苗疆蛊事',
-    bookName: '第十一卷 明珠叙事',
-    parseData: function(data, url){
+    novelUrl: 'http://www.513gp.org/',
+    parseNovelSection: function(data){
         try{
             var $ = cheerio.load(data, {
                 decodeEntities: false
             });
-            var title = $('.entry-header .single-title span').text().replace(/^.*?\s/,'');
-            var textdom = $('.wrapper .entry-content p');
-            var text = ''
-            textdom.each(function(ix, dom){
-                text+=$(dom).html().replace(/(<br>)+/g, '\r\n')+'\r\n';
-            })
-            var $$ = cheerio.load('<div>'+text+'</div>');
-            $$('script').remove();
-            text = $$('div').text();
-            var nextUrl = $('.wrapper .nav-single .nav-next a').attr('href');
-            console.log(title, url);
-            return {
-                code: 200,
-                text: '\r\n## '+title+'\r\n'+text,
-                nextUrl: nextUrl
-            }
+            var textdom = $('.bookcontent');
+            textdom.find('script').remove();
+            var text = textdom.html().replace(/(<br>)+/g, '\r\n');
+            return text;
         } catch(e){
-            return {
-                code: 0,
-                msg: e.message
-            }
+
         }
+    },
+    parseNovelData: function(data){
+        try{
+            var novel = [];
+            var $ = cheerio.load(data, {
+                decodeEntities: false
+            });
+            var domBook = $('.booklist span');
+            var book;
+            domBook.each(function(ix, span){
+                var $span = $(span);
+                if($span.hasClass('v')){
+                    book = {bookName: $span.html().replace(/(^\s*)|(\s*$)/g, ""), bookSections:[]};
+                    novel.push(book);
+                } else {
+                    book.bookSections.push({sectionName:$span.find('a').html().replace(/(^\s*)|(\s*$)/g, ""), sectionUrl: $span.find('a').attr('href')})
+                }
+            });
+            // return [{
+            //     bookName: 'blblb',
+            //     bookSections: [{
+            //         sectionName: '第一章 外婆和金蚕蛊',
+            //         sectionUrl: 'http://www.513gp.org/244.html'
+            //     }, {
+            //         sectionName: '第三章 山魈野怪，湘黔矮骡子',
+            //         sectionUrl: 'http://www.513gp.org/246.html'
+            //     }]
+            // }, {
+            //     bookName: 'aabb',
+            //     bookSections: [{
+            //         sectionName: '第二章 蛊毒发作，需觅良方',
+            //         sectionUrl: 'http://www.513gp.org/245.html'
+            //     }]
+            // },{
+            //     bookName: 'bwew',
+            //     bookSections: [{
+            //         sectionName: '第二章 蛊毒发作，需觅良方',
+            //         sectionUrl: 'http://www.513gp.org/245.html'
+            //     }]
+            // }]
+            return novel;
+        } catch(e){}
     }
 });
 spider.start();

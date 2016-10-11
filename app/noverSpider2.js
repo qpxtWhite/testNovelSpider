@@ -122,7 +122,8 @@ proto.spideSection = function(sectionData){
 }
 proto.writeBook = function(bookName, bookText){
     var self = this;
-    fs.writeFile('../novels/'+this.novelName+'/'+bookName+'.txt', '# '+bookName+'\r\n'+bookText, function(){
+    fs.writeFile('../novels/'+this.novelName+'/'+bookName+'.txt', '# '+bookName+'\r\n'+bookText, function(err){
+
         console.log(self.novelName+'---'+bookName+' success');
     })
 }
