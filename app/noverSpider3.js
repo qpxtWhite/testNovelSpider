@@ -5,28 +5,11 @@ var mkdirp = require('mkdirp');
 var stream = require('stream');
 var fs = require('fs');
 var path = require('path');
-var colors = require('colors');
-
-function log(type, text){
-    var str = '[ '+type+' ]';
-    switch(type){
-        case log.ERROR:
-            str = str.red;
-            break;
-        case log.SUCCESS:
-            str = str.green;
-            break;
-        default:
-            str = str.white;
-            break;
-    }
-    var args = Array.prototype.slice.call(arguments);
-    args[0] = str;
-    console.log.apply(console, args);
-}
-log.ERROR = 'ERROR';
-log.SUCCESS = 'SUCCESS';
-log.NORMAL = 'NORMAL';
+var log4js = require('log4js');
+var request = require('request');
+var charset = require('charset');
+var zlib = require('zlib');
+var iconv = require('iconv-lite');
 
 
 var NovelSpider = function(options){
@@ -56,59 +39,73 @@ var NovelSpider = function(options){
         parseNovelData: function(html){return html}
     }, options || {});
     this.path = path.join(__dirname, '..', '/novels/'+this.novelName)
+    mkdirp.sync(this.path);
+    log4js.configure({
+        appenders: [
+            {type: 'console', category: 'success'},
+            {type: 'file', filename: this.path+'/error.log', category: 'error' }
+        ]
+    })
+    this.successLog = log4js.getLogger('success');
+    this.errorLog = log4js.getLogger('error');
 }
 
 var proto = NovelSpider.prototype;
 proto.start = function(){
-    mkdirp.sync(this.path);
     this.getNovelData();
-
 }
 proto.getNovelData = function(){
     var self = this;
+    self.successLog.trace('开始获取目录');
     this.getData(this.novelUrl).then(function(html){
         self.novelData = self.parseNovelData(html);
         if(!self.novelData || self.novelData.length<=0){
-            log(log.ERROR, '==》目录解析失败');
+            self.errorLog.error('目录解析失败');
         } else {
-            log(log.SUCCESS, '==》目录获取成功');
+            self.successLog.info('目录获取成功');
             self.spideNovel();
         }
     }, function(msg){
-        log(log.ERROR, '==》目录获取失败', msg);
+        self.errorLog.error('目录获取失败', msg);
     })
 }
 proto.spideNovel = function(){
     var self = this;
-    async.mapLimit(this.novelData, 2, function(book, cb){
+    async.mapLimit(this.novelData, 5, function(book, cb){
         self.spideBook(book, cb);
     }, function(){
         self.concatBook();
     });
 }
 proto.spideBook = function(bookData, cb){
-    log(log.NORMAL, '==》开始抓取 ', bookData.bookName);
     var n = 0;
     var section = bookData.bookSections[n];
+    var self = this;
     var writeStream = fs.createWriteStream(this.path+'/'+bookData.bookName+'.txt');
     var readStream = new stream.Readable();
     readStream._read = function(){};
-    writeStream.on('finish', cb);
+    writeStream.on('finish', function(){
+        self.successLog.info('获取成功', bookData.bookName);
+        cb();
+    });
     readStream.pipe(writeStream);
     readStream.push('# '+bookData.bookName+'\r\n');
-    var self = this;
-    this.spideSection(section).then(function spideSuccess(text){
+    this.successLog.trace('开始获取', bookData.bookName);
+    function spideError(err){
+        readStream.push(null);
+    }
+    function spideSuccess(text){
         text = ('## '+section.sectionName+'\r\n'+text+'\r\n');
         readStream.push(text);
         n++;
         section = bookData.bookSections[n];
         if(section){
-            self.spideSection(section).then(spideSuccess);
+            self.spideSection(section).then(spideSuccess, spideError);
         } else {
-            log(log.NORMAL, '==》抓取结束 ', bookData.bookName);
             readStream.push(null);
         }
-    })
+    }
+    this.spideSection(section).then(spideSuccess, spideError);
 }
 proto.spideSection = function(sectionData){
     var self = this;
@@ -116,32 +113,31 @@ proto.spideSection = function(sectionData){
         self.getData(sectionData.sectionUrl).then(function(html){
             var text = self.parseNovelSection(html);
             if(text){
-                log(log.SUCCESS, sectionData.sectionName, sectionData.sectionUrl)
                 resolve(text);
             } else {
-                log(log.ERROR, '==》解析失败', sectionData.sectionName, sectionData.sectionUrl);
+                self.errorLog.error('解析失败', sectionData.sectionName, sectionData.sectionUrl);
                 reject();
             }
         }, function(msg){
-            log(log.ERROR, '==》获取失败', sectionData.sectionUrl, msg);
+            self.errorLog.error('获取失败',sectionData.sectionUrl, msg);
             reject();
         })
     })
 }
 proto.concatBook = function(){
-    log(log.NORMAL, '==》开始合并');
     var self = this;
     var writeStream = fs.createWriteStream(this.path+'/全本.txt');
+    this.successLog.trace('开始合并');
     function concat(n){
         var bookName = self.novelData[n].bookName;
         var readStream = fs.createReadStream(self.path+'/'+bookName+'.txt');
         readStream.on('end', function(){
-            log(log.SUCCESS, bookName);
+            self.successLog.info('合并成功', bookName);
             n++;
             if(self.novelData[n]){
                 concat(n);
             } else {
-                log(log.NORMAL, '==》合并结束')
+                self.successLog.info('全部合并成功');
             }
         })
         readStream.pipe(writeStream, {end: false})
@@ -149,22 +145,49 @@ proto.concatBook = function(){
     concat(0);
 }
 
+// proto.getData = function(url){
+//     return new Promise(function(resolve, reject){
+//         var data = [];
+//         http.get(url, function(res){
+//             res.setEncoding('utf8');
+//             res.on('data', function(chunk){
+//                 console.log(chunk)
+//                 data.push(chunk);
+//             }).on('end', function(){
+//                 if(res.statusCode != 200){
+//                     reject(res.statusCode);
+//                 } else {
+//                     resolve(data.join(''));
+//                 }
+//             })
+//         }).on('error', function(e){
+//             reject(e.message);
+//         })
+//     })
+// }
 proto.getData = function(url){
+    var self = this;
     return new Promise(function(resolve, reject){
-        var data = [];
-        http.get(url, function(res){
-            res.setEncoding('utf8');
-            res.on('data', function(chunk){
-                data.push(chunk);
-            }).on('end', function(){
-                if(res.statusCode != 200){
-                    reject(res.statusCode);
-                } else {
-                    resolve(data.join(''));
+        request({
+            url: url,
+            encoding: null
+        }, function(error, response, body){
+            if(error){
+                reject(url, error);
+            }
+            if(response.statusCode != 200){
+                reject(url, response.statusCode)
+            }
+            try{
+                var buffer = body;
+                if(response.headers['content-encoding'] == 'gzip'){
+                    buffer = zlib.gunzipSync(body);
                 }
-            })
-        }).on('error', function(e){
-            reject(e.message);
+                var encoding = charset(response.headers, buffer);
+                resolve(iconv.decode(buffer, encoding))
+            } catch(e){
+                reject(url, e)
+            }
         })
     })
 }
