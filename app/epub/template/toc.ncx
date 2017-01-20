@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+  <head>
+    <meta name="dtb:uid" content="<%= identifier %>" />
+    <meta name="dtb:depth" content="<%= depth %>" />
+    <meta name="dtb:totalPageCount" content="0" />
+    <meta name="dtb:maxPageNumber" content="0" />
+  </head>
+  <docTitle>
+    <text>test</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="utZnUCNuWrorwTrR8w46SHB" playOrder="1">
+      <navLabel>
+        <text>第一卷 心怀诡胎</text>
+      </navLabel>
+      <content src="index_split_000.html"/>
+      <navPoint id="u6aoQfjgxIAwqLlWS69iuh2" playOrder="2">
+        <navLabel>
+          <text>第一章 寺庙</text>
+        </navLabel>
+        <content src="index_split_000.html#_2"/>
+      </navPoint>
+      <navPoint id="uMwxfecq69Xo99xsg8DnQk4" playOrder="3">
+        <navLabel>
+          <text>第二章 跳楼</text>
+        </navLabel>
+        <content src="index_split_001.html"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="u9xganSMTOszGjy8QlCD4N3" playOrder="4">
+      <navLabel>
+        <text>第二卷 蛊胎出世</text>
+      </navLabel>
+      <content src="index_split_002.html"/>
+      <navPoint id="ukTPvYdXvUgZlM8UulQ8aP3" playOrder="5">
+        <navLabel>
+          <text>第一章 隐居渝城</text>
+        </navLabel>
+        <content src="index_split_002.html#_5"/>
+      </navPoint>
+      <navPoint id="uhQV3VBnMGKWy32WgozJrM8" playOrder="6">
+        <navLabel>
+          <text>第二章 一个故事</text>
+        </navLabel>
+        <content src="index_split_003.html"/>
+      </navPoint>
+    </navPoint>
+  </navMap>
+</ncx>

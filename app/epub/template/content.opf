@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<package xmlns="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/" unique-identifier="bookid" version="2.0">
+<metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<dc:title><%= title %></dc:title>
+	<dc:language>zh</dc:language>
+	<dc:creator opf:role="aut"><%= creator %></dc:creator>
+	<dc:contributor opf:role="bkp"><%= contributor %></dc:contributor>
+	<dc:identifier id="bookid"><%= identifier %></dc:identifier>
+</metadata>
+<manifest>
+	<% pages.forEach(function(page){ %>
+	<item href="<%= page.href %>" id="<%= page.id %>" media-type="application/xhtml+xml"/>
+	<% }) %>
+	<% if(cover){ %>
+	<item href="<%= cover.href %>" id="cover" media-type="image/jpeg"/>
+	<% } %>
+	<% if(styles && style.length>0){ %>
+		<% styles.forEach(function(style){ %>
+		<item href="<%= style.href %>" id="<%= style.id %>" media-type="text/css"/>
+		<% }) %>
+	<% } %>
+	<item href="toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
+</manifest>
+<spine toc="ncx">
+	<% pages.forEach(function(page){ %>
+	<itemref idref="<%= page.id %>"/>
+	<% }) %>
+</spine>
+<guide>

@@ -12,7 +12,7 @@ var http = require('http'),
     _ = require('lodash'),
     Q = require('q'),
     readline = require('readline2'),
-    epub = require('epub/gen')
+    epub = require('./epub')
 
 var rl = readline.createInterface({
     input: process.stdin,
@@ -117,8 +117,8 @@ proto.spideByName = function(catalog){
                 }
             });
             if(book){
-                rl.question('请输入开始链接,回车获取全卷 ', function(link){
-                    self.spideBook(book, link).then(function(bookName){
+                rl.question('请输入开始章节,回车获取全卷 ', function(sectionName){
+                    self.spideBook(book, sectionName).then(function(bookName){
                         deferred.resolve();
                     }, function(){
                         rl.close();
@@ -155,17 +155,17 @@ proto.spideAll = function(catalog){
     });
 }
 
-proto.spideBook = function(book, link){
+proto.spideBook = function(book, sectionName){
     var deferred = Q.defer(), n=0, section, self=this;
     var writeStream = fs.createWriteStream(this.path+'/'+book.bookName+'.txt', {flags: 'a'}),
         readStream = new stream.Readable();
     readStream._read = function(){};
     readStream.pipe(writeStream);
-    if(!link){
+    if(!sectionName){
         readStream.push('# '+book.bookName+'\r\n');
     }
-    if(link && !book.bookSections.some(function(bkSec, ix){
-            if(bkSec.sectionUrl == link){
+    if(sectionName && !book.bookSections.some(function(bkSec, ix){
+            if(bkSec.sectionName == sectionName){
                 n = ix;
                 return true;
             }
